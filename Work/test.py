@@ -38,7 +38,7 @@ with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_opt
 
         # Читаем CSV файл и ищем ИНН
     try:
-        inn_list = pd.read_csv("inn_list.csv", encoding="cp1251", header=0)
+        inn_list = pd.read_csv("inn_list2.csv", encoding="cp1251", header=0)
         inn_list = inn_list["ИНН"].to_list()
     except Exception as e:
         logging.error('Error reading CSV file:', e)
@@ -63,7 +63,5 @@ with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_opt
         # Сделать скриншот всего экрана и сохранить его в файл
         screenshot = pyautogui.screenshot()
         screenshot.save(filename)
-
-
 
 
