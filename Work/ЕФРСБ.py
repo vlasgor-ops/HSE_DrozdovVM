@@ -6,7 +6,6 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import pyautogui
 
-
 # устанавливаем путь к рабочей папке
 working_directory = os.path.join(os.environ['USERPROFILE'], 'Desktop', datetime.date.today().strftime('%Y-%m-%d'))
 if not os.path.exists(working_directory):
@@ -14,13 +13,13 @@ if not os.path.exists(working_directory):
 
 # создаем профиль Firefox
 fp = webdriver.FirefoxProfile()
-fp.set_preference("browser.download.folderList", 2)
-fp.set_preference("browser.download.manager.showWhenStarting", False)
-fp.set_preference("browser.download.dir", folder_path)
-fp.set_preference("pdfjs.disabled", True)
-fp.set_preference("plugin.scan.Acrobat", "99.0")
-fp.set_preference("plugin.scan.plid.all", False)
-fp.set_preference("browser.helperApps.alwaysAsk.force", False)
+fp.set_preference("browser.download.folderList", 2);
+fp.set_preference("browser.download.manager.showWhenStarting", False);
+fp.set_preference("browser.download.dir", working_directory);
+fp.set_preference("pdfjs.disabled", True);
+fp.set_preference("plugin.scan.Acrobat", "99.0");
+fp.set_preference("plugin.scan.plid.all", False);
+fp.set_preference("browser.helperApps.alwaysAsk.force", False);
 fp.set_preference("plugin.disable_full_page_plugin_for_types", "application/pdf")
 fp.set_preference("pdfjs.disabled", True)
 fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/pdf")
