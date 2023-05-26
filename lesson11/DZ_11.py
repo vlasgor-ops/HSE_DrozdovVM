@@ -1,5 +1,6 @@
 import requests
 
+
 class SirotinskyAPI:
     def __init__(self, username, password):
         self.username = username
