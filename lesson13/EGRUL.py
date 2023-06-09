@@ -62,3 +62,4 @@ loaded_data = ParserCBRF.load_data('cb_rates.json')
 print(loaded_data)
 
 
+
