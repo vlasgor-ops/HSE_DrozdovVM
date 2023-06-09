@@ -59,7 +59,7 @@ with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_opt
         inn_form.send_keys(Keys.ENTER)
 
         # ждем загрузки страницы и делаем скриншот
-        time.sleep(4)
+        time.sleep(5)
         now = datetime.now().strftime("%Y-%m-%d")
         directory = f"{os.path.expanduser('~')}/Desktop/{now} Арбитражный суд"
         os.makedirs(directory, exist_ok=True)
@@ -87,7 +87,7 @@ smtp_host = 'smtp.yandex.ru'
 smtp_port = 587
 smtp_user = 'servis.monitoringa@yandex.ru'
 smtp_password = 'vfqtjwgkzlrcveix'
-recipient_email = 'vlasgor@gmail.com'
+recipient_email = 'drozdovvm@cbr.ru'
 subject = 'Скриншоты Арбитр'
 body = ''
 filename = os.path.basename(zip_filename)
