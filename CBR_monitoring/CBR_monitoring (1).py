@@ -18,8 +18,6 @@ from PyQt5.QtCore import Qt
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium_stealth import stealth
 import urllib3
 from selenium.webdriver.common.keys import Keys
@@ -169,7 +167,6 @@ class CSVEditorWindow(QWidget):
                 self.table.setItem(row, col, item)
 
         self.table.itemChanged.connect(self.edit_data)
-        self.table.itemEntered.connect(self.clear_cell)
 
     def mimeData(self, indexes):
         mime_data = super().mimeData(indexes)
@@ -265,24 +262,6 @@ class CSVEditorWindow(QWidget):
         # Обновляем таблицу
         self.load_data()
 
-
-    def clear_cell(self, item):
-        row = item.row()
-        col = item.column()
-        new_value = ""
-
-        with open(self.csv_path, "r") as file:
-            reader = csv.reader(file)
-            data = list(reader)
-
-        # Обновляем данные в списке
-        data[row][col] = new_value
-
-        with open(self.csv_path, "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerows(data)
-
-
     def delete_data(self):
         selected_rows = set()
         for item in self.table.selectedItems():
@@ -335,8 +314,14 @@ class CSVEditorWindow(QWidget):
         # Получаем версию браузера Chrome
         chrome_version = chromedriver_autoinstaller.get_chrome_version()
 
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
-        with driver as browser:
+        # Получаем версию ChromeDriver для указанной версии Chrome
+        chrome_driver_path = chromedriver_autoinstaller.install(cwd=True, verbose=True, chrome_version=chrome_version)
+
+        chrome_options = Options()
+        chrome_options.add_argument("start-maximized")
+        chrome_options.add_argument("--disable-popup-blocking=false")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
 
         # Подсчет количества обработанных ИНН
         processed_count = 0
@@ -759,3 +744,4 @@ if __name__ == '__main__':
     window = CSVEditorWindow()
     window.showMaximized()
     app.exec_()
+

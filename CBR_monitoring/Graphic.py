@@ -1,25 +1,19 @@
 import os
 import csv
-import pickle
 import re
 import configparser
 import time
 import logging
 import pyautogui
-import chromedriver_autoinstaller
-from IPython.external.qt_for_kernel import QtCore
 from PIL import Image
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, \
     QTableWidget, QTableWidgetItem, QMessageBox
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAbstractItemView
 from datetime import datetime
-from PyQt5.QtCore import Qt
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service as ChromeService
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium_stealth import stealth
 import urllib3
 from selenium.webdriver.common.keys import Keys
@@ -35,7 +29,7 @@ class CSVEditorWindow(QWidget):
         self.setWindowTitle("Мониторинг должников Банка России")
         self.layout = QVBoxLayout()
         # Set the window icon
-        icon = QIcon("lessthan10.png")
+        icon = QIcon("../CBR_monitoring_develop/lessthan10.png")
         self.setWindowIcon(icon)
 
         # Создание таблицы
@@ -43,10 +37,6 @@ class CSVEditorWindow(QWidget):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["ИНН юридического лица", "Наименование юридического лица",
                                               "ИНН должностного лица", "ФИО должностного лица"])
-
-        self.table.setDragEnabled(True)
-        self.table.setAcceptDrops(True)
-        self.table.setDragDropMode(QAbstractItemView.InternalMove)
 
         # Создание полей ввода
         self.inn_legal_input = QLineEdit()
@@ -63,8 +53,9 @@ class CSVEditorWindow(QWidget):
         self.monitoring_egryul_button = QPushButton("Мониторинг ЕГРЮЛ")
         self.monitoring_efrsb_button = QPushButton("Мониторинг ЕФРСБ")
         self.monitoring_arbitr_button = QPushButton("Мониторинг kad.arbitr")
-        self.contact_label = QLabel("v.1.1, Отделение Красноярск, Дроздов Виталий, drozdovvm@cbr.ru")
+        self.contact_label = QLabel("v.1.0, Отделение Красноярск, Дроздов Виталий, drozdovvm@cbr.ru")
         self.contact_label.setAlignment(Qt.AlignRight)
+
 
         # Компоновка элементов интерфейса
         self.layout.addWidget(self.table)
@@ -127,21 +118,7 @@ class CSVEditorWindow(QWidget):
         if self.config.has_option("Settings", "email"):
             saved_email = self.config.get("Settings", "email")
             self.email_input.setText(saved_email)
-    def edit_data(self, item):
-        row = item.row()
-        col = item.column()
-        new_value = item.text()
 
-        with open(self.csv_path, "r") as file:
-            reader = csv.reader(file)
-            data = list(reader)
-
-        # Обновляем данные в списке
-        data[row][col] = new_value
-
-        with open(self.csv_path, "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerows(data)
     def load_data(self):
         self.table.clearContents()
 
@@ -161,77 +138,6 @@ class CSVEditorWindow(QWidget):
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
-
-        for row, row_data in enumerate(data[0:], start=0):
-            for col, col_data in enumerate(row_data):
-                item = QTableWidgetItem(col_data)
-                item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)  # Разрешаем редактирование
-                self.table.setItem(row, col, item)
-
-        self.table.itemChanged.connect(self.edit_data)
-        self.table.itemEntered.connect(self.clear_cell)
-
-    def mimeData(self, indexes):
-        mime_data = super().mimeData(indexes)
-        encoded_data = pickle.dumps([(index.row(), index.column()) for index in indexes])
-        mime_data.setData("application/x-qabstractitemmodeldatalist", encoded_data)
-        return mime_data
-
-    def dragEnterEvent(self, event):
-        mime_data = event.mimeData()
-        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
-            event.acceptProposedAction()
-
-    def dragMoveEvent(self, event):
-        mime_data = event.mimeData()
-        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
-            event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        mime_data = event.mimeData()
-        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
-            encoded_data = mime_data.data("application/x-qabstractitemmodeldatalist")
-            data = pickle.loads(encoded_data)
-
-            # Получаем координаты курсора
-            drop_position = event.pos()
-
-            # Определяем строку, над которой был отпущен элемент
-            target_row = self.table.rowAt(drop_position.y())
-
-            # Если над пустой областью, вставляем в конец
-            if target_row == -1:
-                target_row = self.table.rowCount()
-
-            # Получаем выделенные строки
-            selected_rows = set(row for row, _ in data)
-
-            # Получаем текущие данные
-            with open(self.csv_path, "r") as file:
-                reader = csv.reader(file)
-                current_data = list(reader)
-
-            # Если перемещение в ту же область, удаляем выделенные строки
-            if target_row in selected_rows:
-                selected_rows.remove(target_row)
-
-            # Вставляем строки перед целевой строкой
-            for row in sorted(selected_rows, reverse=True):
-                new_row_data = current_data[row]
-                current_data.insert(target_row, new_row_data)
-
-            # Удаляем строки, если перемещение в ту же область
-            if target_row in selected_rows:
-                for row in selected_rows:
-                    current_data.pop(row)
-
-            # Обновляем CSV-файл
-            with open(self.csv_path, "w", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerows(current_data)
-
-            # Обновляем таблицу
-            self.load_data()
 
     def add_data(self):
         inn_legal = self.inn_legal_input.text().strip()
@@ -264,24 +170,6 @@ class CSVEditorWindow(QWidget):
 
         # Обновляем таблицу
         self.load_data()
-
-
-    def clear_cell(self, item):
-        row = item.row()
-        col = item.column()
-        new_value = ""
-
-        with open(self.csv_path, "r") as file:
-            reader = csv.reader(file)
-            data = list(reader)
-
-        # Обновляем данные в списке
-        data[row][col] = new_value
-
-        with open(self.csv_path, "w", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerows(data)
-
 
     def delete_data(self):
         selected_rows = set()
@@ -318,10 +206,10 @@ class CSVEditorWindow(QWidget):
             self.config.add_section("Settings")
 
         self.config.set("Settings", "email", email)
-        with open("../lesson1/config.ini", "w") as config_file:
+        with open("config.ini", "w") as config_file:
             self.config.write(config_file)
 
-    # Код для запуска скрипта мониторинга ЕГРЮЛ
+    # Ваш код для запуска скрипта мониторинга ЕГРЮЛ
     def run_egryul_monitoring(self):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         urllib3.PoolManager(num_pools=20, maxsize=20)
@@ -331,12 +219,11 @@ class CSVEditorWindow(QWidget):
         directory = f"C:/CBR_monitoring/ЕГРЮЛ/{now}_ЕГРЮЛ"
         os.makedirs(directory, exist_ok=True)
 
-        chromedriver_autoinstaller.install()
-        # Получаем версию браузера Chrome
-        chrome_version = chromedriver_autoinstaller.get_chrome_version()
-
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
-        with driver as browser:
+        chrome_options = Options()
+        chrome_options.add_argument("start-maximized")
+        chrome_options.add_argument("--disable-popup-blocking=false")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
 
         # Подсчет количества обработанных ИНН
         processed_count = 0
@@ -353,7 +240,7 @@ class CSVEditorWindow(QWidget):
         # Цикл по списку ИНН
         while inn_list:
             # Запуск браузера
-            with webdriver.Chrome(executable_path=chrome_driver_path, options=chrome_options) as browser:
+            with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_options) as browser:
                 stealth(browser, languages=["en-US", "en"], vendor="Google Inc.", platform="Win32",
                         webgl_vendor="Intel Inc.", renderer="Intel Iris OpenGL Engine", fix_hairline=True)
 
@@ -459,18 +346,14 @@ class CSVEditorWindow(QWidget):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         urllib3.PoolManager(num_pools=20, maxsize=20)
         logging.basicConfig(level=logging.INFO)
-        # Указываем путь к исполняемому файлу Google Chrome
-        chrome_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-        # Установка ChromeDriver
-        chromedriver_autoinstaller.install()
+
         chrome_options = Options()
         chrome_options.add_argument("start-maximized")
         chrome_options.add_argument("--disable-popup-blocking=false")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
-        chrome_options.binary_location = chrome_path
 
-        with webdriver.Chrome(options=chrome_options) as browser:
+        with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_options) as browser:
             stealth(browser,
                     languages=["en-US", "en"],
                     vendor="Google Inc.",
@@ -606,18 +489,14 @@ class CSVEditorWindow(QWidget):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         urllib3.PoolManager(num_pools=20, maxsize=20)
         logging.basicConfig(level=logging.INFO)
-        # Указываем путь к исполняемому файлу Google Chrome
-        chrome_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-        # Установка ChromeDriver
-        chromedriver_autoinstaller.install()
+
         chrome_options = Options()
         chrome_options.add_argument("start-maximized")
         chrome_options.add_argument("--disable-popup-blocking=false")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
-        chrome_options.binary_location = chrome_path
 
-        with webdriver.Chrome(options=chrome_options) as browser:
+        with webdriver.Chrome(executable_path='C:\\chromedriver.exe', options=chrome_options) as browser:
             stealth(browser,
                     languages=["en-US", "en"],
                     vendor="Google Inc.",
@@ -759,3 +638,4 @@ if __name__ == '__main__':
     window = CSVEditorWindow()
     window.showMaximized()
     app.exec_()
+

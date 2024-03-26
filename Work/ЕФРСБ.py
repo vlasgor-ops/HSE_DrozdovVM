@@ -54,7 +54,7 @@ for i, inn in enumerate(inn_list):
     inn_form.send_keys(Keys.ENTER)
 
     # ждем загрузки страницы и делаем скриншот
-    time.sleep(2)  # увеличьте время ожидания, если страница долго загружается
+    time.sleep(4)  # увеличьте время ожидания, если страница долго загружается
     screenshot_filename = os.path.join(working_directory, f'{inn["inn"]} {fio}.png')
 
     pyautogui.screenshot(screenshot_filename)
